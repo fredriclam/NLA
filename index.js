@@ -75,10 +75,58 @@ function loading() {
   menu.x = 20;
   menu.y = 50;
 
-  var select1 = new selectText('sadhia',{fontFamily: 'Garamond', fill: 0xFFFFFF, fontSize: 24, align: 'center'});
+  var select1 = new selectText('yeyeye',{fontFamily: 'Garamond', fill: 0xFFFFFF, fontSize: 24, align: 'center'});
   
   menu.addChild(select1);
   app.stage.addChild(menu)
+
+  // Looks nice, leaving here :)
+  var texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
+  var sprite = new PIXI.Sprite(texture);
+  sprite.length = 100;
+  sprite.width = 100;
+  sprite.x = 450;
+  sprite.y = 300;
+
+  sprite.convertTo3d();
+  sprite.position3d.set(0, 0, 1);
+  app.stage.addChild(sprite);
+
+  // Plop camera in middle of screen
+  var camera = new PIXI.projection.Camera3d();
+  camera.setPlanes(400, 10, 10000, true); // true if you want orthographics projection
+  camera.position.set(app.screen.width / 2, app.screen.height / 2);
+
+  var placeholderTexture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
+  for(let i = 0; i < 3; ++i){
+    let arrow = new PIXI.Sprite(placeholderTexture);
+    arrow.height = 1;
+    arrow.width = 50;
+    arrow.x = 0;
+    arrow.y = 0;
+    arrow.convertTo3d();
+    arrow.position3d.set(0*i* 50, 0, 0);
+    switch (i){
+      case 0:
+        arrow.euler.x = Math.PI / 2;
+        break;
+      case 1:
+        arrow.euler.y = Math.PI / 2;
+        break;
+      case 2:
+        arrow.euler.z = Math.PI / 2; 
+        break;
+      default:
+        console.warn('wat');
+    }
+    camera.addChild(arrow)
+  }
+  // camera.euler.z = Math.pi/9.5;
+  camera.euler.x = Math.PI / 4;
+  camera.euler.y = Math.PI / 4;
+  camera.euler.z = Math.PI / 4;
+
+  app.stage.addChild(camera);
 
   // Finish loading
   state = doneLoading;
@@ -109,7 +157,7 @@ class selectText extends PIXI.Text {
   animate(delta){
     // console.log(this.growing);
     if (this.growing){
-      if (this.scale.x < 2){
+      if (this.scale.x < 1.3){
         this.scale.x += delta * 0.1;
         this.scale.y += delta * 0.1;
       }
