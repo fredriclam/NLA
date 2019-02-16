@@ -1,10 +1,11 @@
+/*jslint es6 */
+'use strict';
+
 // Stage initial size
 var defaultSize = [192, 108];
 // Compute initial aspect ratio
 var aspectRatio = defaultSize[0] / defaultSize[1];
 // Static paths to background assets
-var bgImagePathLarge = "static/images/yul.jpg";
-var bgImagePathMobile = "static/images/yul_small.jpg"; // Smaller texture
 
 // Set up stage and renderer with placeholder size
 const app = new PIXI.Application({
@@ -23,11 +24,6 @@ document.body.appendChild(renderer.view);
 
 // Set state to initial state
 var state = init;
-var uiFocus =  false;
-var animSpeed = 0.1;
-// Global declarations
-var bgTexture;
-var bgSprite;
 
 // Load initial state
 init();
@@ -38,11 +34,11 @@ function init() {
   resizePixi();
 
   // Create loading screen
-  loadingText = new PIXI.Text("Loading...\n" +
-    "Optimizing for your window width: " + window.innerWidth,
-    {fontFamily :"Arial",
+  var loadingText = new PIXI.Text("Loading...\n" +
+    "Optimizing for window width: " + window.innerWidth,
+    {fontFamily :"Garamond",
     fontSize: 36,
-    fill: "white",
+    fill: "black",
     align:"center"});
   loadingText.x = window.innerWidth/2;
   loadingText.y = window.innerHeight/2;
@@ -60,52 +56,92 @@ function init() {
     stretchToFit();
   };
 
-  bgImagePath = bgImagePathLarge;
-  // Check for small screens
-  if (window.innerWidth < 1200){
-    bgImagePath = bgImagePathMobile;
-  }
   // Load background image
-  PIXI.loader.add(bgImagePath).load((loader, resources) => {
-    state = doneLoading;
-    console.log("Resources loaded.");
-    console.log("Loaded " + bgImagePath);
-  })
+  // PIXI.loader.add(bgImagePath).load((loader, resources) => {
+  //   state = doneLoading;
+  //   console.log("Resources loaded.");
+  //   console.log("Loaded " + bgImagePath);
+  // })
 
   state = loading;
 }
 
 // Loading state
 function loading() {
+  // Add elements
+  let menu = new PIXI.Container();
+  menu.name = 'menu';
+  // TODO: refactor to scale with screen container
+  menu.x = 20;
+  menu.y = 50;
 
-};
+  var select1 = new selectText('sadhia',{fontFamily: 'Garamond', fill: 0xFFFFFF, fontSize: 24, align: 'center'});
+  
+  menu.addChild(select1);
+  app.stage.addChild(menu)
+
+  // Finish loading
+  state = doneLoading;
+}
+
+/** Text wrapper that integrates animations. */
+class selectText extends PIXI.Text {
+  constructor(text, params){
+    super(text, params);
+    this.interactive = true;
+    this.hitArea = new PIXI.Rectangle(this.x,
+                                      this.y,
+                                      this.width,
+                                      this.height);
+    this.growing = false;
+    // Mouse event callbacks
+    this.mouseover = function(mouseData) {
+      console.log('yeet');
+      this.growing = true;
+    }
+
+    // Mouse event callbacks
+    this.mouseout = function(mouseData) {
+      this.growing = false;
+    }
+  }
+
+  animate(delta){
+    // console.log(this.growing);
+    if (this.growing){
+      if (this.scale.x < 2){
+        this.scale.x += delta * 0.1;
+        this.scale.y += delta * 0.1;
+      }
+    }
+    else {
+      if (this.scale.x > 1){
+        this.scale.x -= delta * 0.1;
+        this.scale.y -= delta * 0.1;
+      }
+    }
+  }
+}
 
 // Done loading state
 function doneLoading() {
-  // Make background
-  bgTexture = new PIXI.Texture.fromImage(bgImagePath);
-  bgTexture.textureAspectRatio = bgTexture.width / bgTexture.height;
-  bgSprite = new PIXI.Sprite(bgTexture);
-  stage.addChild(bgSprite);
-  bgSprite.x = window.innerWidth/2;
-  bgSprite.y = 0;
-  bgSprite.anchor.x = 0.5;
-  bgSprite.anchor.y = 0;
-
-  // Control blur state
-  bgSprite.maxBlurStrength = 0.7;
-  bgSprite.animProgress = 0;
-  bgSprite.animSpeed = animSpeed;
-  bgSprite.filters = [new PIXI.filters.BlurFilter(1, 1, 1)];
-  bgSprite.filters[0].blur = bgSprite.maxBlurStrength * bgSprite.animProgress;
+  // // Make background
+  // bgTexture = new PIXI.Texture.fromImage(bgImagePath);
+  // bgTexture.textureAspectRatio = bgTexture.width / bgTexture.height;
+  // bgSprite = new PIXI.Sprite(bgTexture);
+  // stage.addChild(bgSprite);
+  // bgSprite.x = window.innerWidth/2;
+  // bgSprite.y = 0;
+  // bgSprite.anchor.x = 0.5;
+  // bgSprite.anchor.y = 0;
 
   // Re-size background to fit
   stretchToFit();
 
   // Make simple title
-  titleText = new PIXI.Text("YOU ARE HERE.", {
+  var titleText = new PIXI.Text("wtf", {
     fontSize: 64,
-    fontFamily: "Arial",
+    fontFamily: "Helvetica",
     letterSpacing: -3,
     fill: 0xFFFFFF,
     dropShadow: true,
@@ -118,47 +154,28 @@ function doneLoading() {
   titleText.y = window.innerHeight / 3;
   app.stage.addChild(titleText);
 
-
-  // Add UI buttons
-  galleryButton = new Button(0.33*window.innerWidth,
-    0.67*window.innerHeight, "GALLERY", '#');
-  bioButton = new Button(0.67*window.innerWidth,
-    0.67*window.innerHeight, "BIO", 'resume');
-
   // Add background blur monitor
-  app.ticker.add((delta) => {
-    if (uiFocus) {
-      bgSprite.animProgress += bgSprite.animSpeed * delta;
-    }
-    else {
-      bgSprite.animProgress -= bgSprite.animSpeed * delta;
-    }
-    bgSprite.animProgress = Math.min(Math.max(bgSprite.animProgress, 0.0), 1.0);
-    bgSprite.filters[0].blur = bgSprite.maxBlurStrength * bgSprite.animProgress;
-  })
+  // app.ticker.add((delta) => { })
   // Switch state to main
   state = mainState;
-};
+}
 
 // Stretches bgSprite to fit inner screen
-function stretchToFit(){
-  bgSprite.width = window.innerWidth+1;
-  bgSprite.height = bgSprite.width / bgTexture.textureAspectRatio;
-  if (bgSprite.height < window.innerHeight){
-    bgSprite.height = window.innerHeight;
-    bgSprite.width = bgSprite.height * bgTexture.textureAspectRatio;
-  }
-  bgSprite.x = window.innerWidth/2;
-};
+function stretchToFit(){ }
 
 // Main (animation) state
-function mainState() {
-  uiFocus = galleryButton.inFocus | bioButton.inFocus;
+// Requests pixi render
+function mainState(delta) {
+  // Call animations for all menu children
+  for (let childIndex in app.stage.getChildByName('menu').children) {
+    let child = app.stage.getChildByName('menu').children[childIndex];
+    child.animate(delta);
+  }
   // Render once every time state is processed
   window.requestAnimationFrame(() => {
     renderer.render(stage);
   });
-};
+}
 
 // Resize callback
 function resizePixi() {
