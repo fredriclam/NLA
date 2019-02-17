@@ -51,6 +51,9 @@ document.body.appendChild(renderer.view);
 var threeTexture = new PIXI.Texture.fromCanvas(threeCanvas.domElement);
 var threeSprite = new PIXI.Sprite(threeTexture);
 stage.addChild(threeSprite);
+threeSprite.x = 4/9*window.innerWidth;
+threeSprite.y = 7/18*window.innerHeight;
+threeSprite.anchor.set(0.5);
 
 //
 // Init
@@ -87,8 +90,10 @@ function init() {
   let menu = new PIXI.Container();
   menu.name = 'menu';
   // TODO: displace menu items
-  menu.x = 1/9*window.innerWidth;
-  menu.y = 0.65*window.innerHeight;
+  menu.x = 0.1*window.innerWidth;
+  menu.y = 0.5*window.innerHeight;
+  menu.width = 1/9*window.innerWidth;
+  menu.height = 0.65*window.innerHeight;
   menu.addChild(new navbarClickable('Hello',0,0));
   menu.addChild(new navbarClickable('Goodbye',0,40));  
   stage.addChild(menu)
