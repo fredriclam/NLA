@@ -1,11 +1,49 @@
 /*jslint es6 */
 'use strict';
 
+// PIXI.settings.RESOLUTION = 2
+
 // Stage initial size
 var defaultSize = [192, 108];
 // Compute initial aspect ratio
 var aspectRatio = defaultSize[0] / defaultSize[1];
-// Static paths to background assets
+
+//
+// Three.js setup
+//
+// Three js boilerplate
+var width = window.innerWidth;
+var height = window.innerHeight;
+
+var scene_3D = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(75, width/height, 1, 10000);
+
+camera.position.set( 700, 700, 700);
+
+// camera.rotation.setFromVector3(new THREE.Vector3(1, 1, 1))
+camera.lookAt( new THREE.Vector3(0,0,0) );
+
+var controls = new THREE.EditorControls(camera);
+// controls.update();
+
+
+var canvas_3D = new THREE.WebGLRenderer({antialias: true, alpha: true});
+canvas_3D.setSize(width, height);
+
+// // Test cube
+// var geometry = new THREE.BoxGeometry( 500, 500, 500 );
+// var material = new THREE.MeshNormalMaterial();
+// // var material = new THREE.MeshLambertMaterial({color: 0x0000ff, transparent: true, opacity: 0.5});
+// var cube = new THREE.Mesh(geometry, material);
+// cube.position.x = 0;
+// cube.position.z = 0;
+// cube.rotation.x = 0;
+// cube.rotation.y = 0;
+// cube.rotation.z = 0;
+// scene_3D.add(cube);
+
+// Render once for test
+canvas_3D.render(scene_3D, camera)
 
 // Set up stage and renderer with placeholder size
 const app = new PIXI.Application({
@@ -19,11 +57,18 @@ const app = new PIXI.Application({
 const stage = app.stage;
 const renderer = app.renderer; // PIXI.autoDetectRenderer(defaultSize[0], defaultSize[1]);
 // const sprites = {};
+renderer.roundPixels = true;
 
 document.body.appendChild(renderer.view);
+// document.body.appendChild(canvas_3D.domElement);
+
+var texture_3D = new PIXI.Texture.fromCanvas(canvas_3D.domElement);
+var sprite_3D = new PIXI.Sprite(texture_3D);
+app.stage.addChild(sprite_3D);
 
 // Set state to initial state
 var state = init;
+// state = () => {};
 
 // Load initial state
 init();
@@ -33,18 +78,19 @@ function init() {
   // Resize app
   resizePixi();
 
-  // Create loading screen
-  var loadingText = new PIXI.Text("Loading...\n" +
-    "Optimizing for window width: " + window.innerWidth,
-    {fontFamily :"Garamond",
-    fontSize: 36,
-    fill: "black",
-    align:"center"});
-  loadingText.x = window.innerWidth/2;
-  loadingText.y = window.innerHeight/2;
-  loadingText.anchor.x = 0.5;
-  loadingText.anchor.y = 0.5;
-  app.stage.addChild(loadingText);
+  // Create loading screen text
+  // var loadingText = new PIXI.Text("Loading...\n" +
+  //   "Optimizing for window width: " + window.innerWidth,
+  //   {fontFamily :"Garamond",
+  //   fontSize: 36,
+  //   fill: "black",
+  //   align:"center"});
+  // loadingText.x = window.innerWidth/2;
+  // loadingText.y = window.innerHeight/2;
+  // loadingText.anchor.x = 0.5;
+  // loadingText.anchor.y = 0.5;
+  // app.stage.addChild(loadingText);
+
   // Render once
   renderer.render(stage);
 
@@ -80,56 +126,30 @@ function loading() {
   menu.addChild(select1);
   app.stage.addChild(menu)
 
-  // Looks nice, leaving here :)
-  var texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
-  var sprite = new PIXI.Sprite(texture);
-  sprite.length = 100;
-  sprite.width = 100;
-  sprite.x = 450;
-  sprite.y = 300;
-
-  sprite.convertTo3d();
-  sprite.position3d.set(0, 0, 1);
-  app.stage.addChild(sprite);
-
-  // Plop camera in middle of screen
-  var camera = new PIXI.projection.Camera3d();
-  camera.setPlanes(400, 10, 10000, true); // true if you want orthographics projection
-  camera.position.set(app.screen.width / 2, app.screen.height / 2);
-
-  var placeholderTexture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
-  for(let i = 0; i < 3; ++i){
-    let arrow = new PIXI.Sprite(placeholderTexture);
-    arrow.height = 1;
-    arrow.width = 50;
-    arrow.x = 0;
-    arrow.y = 0;
-    arrow.convertTo3d();
-    arrow.position3d.set(0*i* 50, 0, 0);
-    switch (i){
-      case 0:
-        arrow.euler.x = Math.PI / 2;
-        break;
-      case 1:
-        arrow.euler.y = Math.PI / 2;
-        break;
-      case 2:
-        arrow.euler.z = Math.PI / 2; 
-        break;
-      default:
-        console.warn('wat');
-    }
-    camera.addChild(arrow)
+  // Build axes
+  var origin = new THREE.Vector3(0, 0, 0);
+  var axisLength = 300;
+  for (let i in [0, 1, 2]){
+    var arrowHelper = new THREE.ArrowHelper(
+                        new THREE.Vector3(i==0, i==1, i==2),
+                        origin, axisLength, 0x888888, 2/3*0.2*axisLength);
+    scene_3D.add(arrowHelper);
   }
-  // camera.euler.z = Math.pi/9.5;
-  camera.euler.x = Math.PI / 4;
-  camera.euler.y = Math.PI / 4;
-  camera.euler.z = Math.PI / 4;
-
-  app.stage.addChild(camera);
+  // Add test vector
+  scene_3D.add(new geomVector(5,2,1,1));
 
   // Finish loading
   state = doneLoading;
+}
+
+/** Geometric 3-D vector. */
+class geomVector extends THREE.ArrowHelper {
+  constructor(x,y,z, normalizedLength=1){
+    let dir = new THREE.Vector3(x,y,z);
+    dir.normalize();
+    let origin = new THREE.Vector3(0,0,0);
+    super(dir, origin, 200*normalizedLength, 0x00ffff);
+  }  
 }
 
 /** Text wrapper that integrates animations. */
@@ -142,9 +162,9 @@ class selectText extends PIXI.Text {
                                       this.width,
                                       this.height);
     this.growing = false;
+    this.resolution = 20;
     // Mouse event callbacks
     this.mouseover = function(mouseData) {
-      console.log('yeet');
       this.growing = true;
     }
 
@@ -187,19 +207,19 @@ function doneLoading() {
   stretchToFit();
 
   // Make simple title
-  var titleText = new PIXI.Text("wtf", {
+  var titleText = new PIXI.Text("Arrows", {
     fontSize: 64,
-    fontFamily: "Helvetica",
-    letterSpacing: -3,
+    fontFamily: "Garamond",
+    letterSpacing: 0,
     fill: 0xFFFFFF,
-    dropShadow: true,
-    dropShadowColor: 0x000000,
-    dropShadowBlur: 3,
-    dropShadowDistance: 1
+    // dropShadow: true,
+    // dropShadowColor: 0x000000,
+    // dropShadowBlur: 3,
+    // dropShadowDistance: 1
   });
   titleText.anchor.set(0.5);
   titleText.x = window.innerWidth / 2;
-  titleText.y = window.innerHeight / 3;
+  titleText.y = window.innerHeight / 10;
   app.stage.addChild(titleText);
 
   // Add background blur monitor
@@ -223,6 +243,14 @@ function mainState(delta) {
   window.requestAnimationFrame(() => {
     renderer.render(stage);
   });
+  // Animate global cube
+  // cube.rotation.x += 0.05*delta;
+  // cube.rotation.y += 0.072*delta;
+  // cube.rotation.z += 0.015*delta;
+  sprite_3D.texture.update();
+  canvas_3D.render(scene_3D, camera)
+  // controls.update();
+
 }
 
 // Resize callback
