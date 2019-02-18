@@ -111,7 +111,7 @@ function init() {
   threeScene.add(new geomVector(5,2,1,1));
 
   // Make scene header
-  let titleText = new PIXI.Text("Arrows", {
+  let titleText = new PIXI.Text("Woop doop", {
     fontSize: 64,
     fontFamily: "Garamond",
     letterSpacing: 0,
